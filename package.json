@@ -7,7 +7,8 @@
   "license": "MIT",
   "scripts": {
     "start": "parcel src/index.html",
-    "build": "rimraf dist && parcel build src/index.html"
+    "build": "rimraf dist && parcel build src/index.html",
+    "fmt": "prettier src/**/* --write"
   },
   "devDependencies": {
     "parcel-bundler": "^1.12.4",
