@@ -19,16 +19,27 @@ type FrequencyAnnotation = {
   amplitudes: number[];
 };
 
-const annotateFrequency = (frequencyAmounts: Uint8Array[]): FrequencyAnnotation[] => {
+const annotateFrequency = (
+  frequencyAmounts: Uint8Array[]
+): FrequencyAnnotation[] => {
   const numSamples = frequencyAmounts[0].length;
-  return unzip(frequencyAmounts.map(u8a => [...u8a])).map<FrequencyAnnotation>((amplitudes, i) => ({
-    frequency: i * SAMPLING_RATE / numSamples,
-    amplitudes
-  })).filter(x => x.frequency !== 0);
+  return unzip(frequencyAmounts.map(u8a => [...u8a]))
+    .map<FrequencyAnnotation>((amplitudes, i) => ({
+      frequency: (i * SAMPLING_RATE) / numSamples,
+      amplitudes
+    }))
+    .filter(x => x.frequency !== 0);
 };
 
-const extractModalSoundFrequency = (annotatedFrequencies: FrequencyAnnotation[]): FrequencyAnnotation[] => {
-  return sortBy(annotatedFrequencies, x => -countBy(x.amplitudes, a => a > MAX_SAMPLE_VALUE / 2).true).filter(x => x.frequency > 400).slice(0, 20);
+const extractModalSoundFrequency = (
+  annotatedFrequencies: FrequencyAnnotation[]
+): FrequencyAnnotation[] => {
+  return sortBy(
+    annotatedFrequencies,
+    x => -countBy(x.amplitudes, a => a > MAX_SAMPLE_VALUE / 2).true
+  )
+    .filter(x => x.frequency > 400)
+    .slice(0, 20);
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -49,7 +60,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   analyser.fftSize = 2048;
 
   document.addEventListener("click", async () => {
-    const frequencyAmounts = await playAudioBuffer(audioCtx, audioBuffer, analyser);
+    const frequencyAmounts = await playAudioBuffer(
+      audioCtx,
+      audioBuffer,
+      analyser
+    );
     const annotatedFrequencies = annotateFrequency(frequencyAmounts);
 
     canvasCtx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -58,26 +73,40 @@ document.addEventListener("DOMContentLoaded", async () => {
     const sortByFrequencies = sortBy(annotatedFrequencies, x => x.frequency);
     canvasCtx.beginPath();
     canvasCtx.moveTo(0, 0);
-    for (const {frequency, amplitudes} of sortByFrequencies) {
+    for (const { frequency, amplitudes } of sortByFrequencies) {
       if (frequency > DRAWING_FREQUENCY_LIMIT) continue;
-      canvasCtx.lineTo(frequency / DRAWING_FREQUENCY_LIMIT * CANVAS_WIDTH, CANVAS_HEIGHT - sum(amplitudes) / amplitudes.length);
+      canvasCtx.lineTo(
+        (frequency / DRAWING_FREQUENCY_LIMIT) * CANVAS_WIDTH,
+        CANVAS_HEIGHT - sum(amplitudes) / amplitudes.length
+      );
     }
     canvasCtx.stroke();
 
     // draw discriminative frequency
-    const modalSoundFrequencies = extractModalSoundFrequency(annotatedFrequencies);
-    for (const {frequency} of modalSoundFrequencies) {
+    const modalSoundFrequencies = extractModalSoundFrequency(
+      annotatedFrequencies
+    );
+    for (const { frequency } of modalSoundFrequencies) {
       canvasCtx.beginPath();
-      canvasCtx.moveTo(frequency / DRAWING_FREQUENCY_LIMIT * analyser.frequencyBinCount, 0);
-      canvasCtx.lineTo(frequency / DRAWING_FREQUENCY_LIMIT * analyser.frequencyBinCount, CANVAS_HEIGHT);
+      canvasCtx.moveTo(
+        (frequency / DRAWING_FREQUENCY_LIMIT) * analyser.frequencyBinCount,
+        0
+      );
+      canvasCtx.lineTo(
+        (frequency / DRAWING_FREQUENCY_LIMIT) * analyser.frequencyBinCount,
+        CANVAS_HEIGHT
+      );
       canvasCtx.stroke();
     }
 
-    const modalSound = makeModalSynthesis(modalSoundFrequencies.map(({ frequency, amplitudes }) => ({
-      frequency: frequency,
-      amplitude: Math.max(...amplitudes) / MAX_SAMPLE_VALUE,
-      decay: countBy(amplitudes, a => a !== 0).true / amplitudes.length
-    })), audioCtx).makeModel({
+    const modalSound = makeModalSynthesis(
+      modalSoundFrequencies.map(({ frequency, amplitudes }) => ({
+        frequency: frequency,
+        amplitude: Math.max(...amplitudes) / MAX_SAMPLE_VALUE,
+        decay: countBy(amplitudes, a => a !== 0).true / amplitudes.length
+      })),
+      audioCtx
+    ).makeModel({
       amplitudeMultiplier: 10
     });
     modalSound.outputNode.connect(audioCtx.destination);
