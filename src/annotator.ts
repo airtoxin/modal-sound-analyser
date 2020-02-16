@@ -1,6 +1,5 @@
 import unzip from "lodash/unzip";
 import sortBy from "lodash/sortBy";
-import countBy from "lodash/countBy";
 
 export type FrequencyAnnotation = {
   frequency: number;
@@ -22,12 +21,29 @@ export const annotateFrequency = (
 
 export const extractModalSoundFrequency = (
   annotatedFrequencies: readonly FrequencyAnnotation[],
-  maxSampleValue: number
+  minFrequencyDistance: number = 100
 ): FrequencyAnnotation[] => {
-  return sortBy(
+  const discriminativeFrequencies = sortBy(
     annotatedFrequencies,
-    x => -countBy(x.amplitudes, a => a > maxSampleValue / 2).true
+    x => -Math.max(...x.amplitudes)
   )
-    .filter(x => x.frequency > 400)
-    .slice(0, 20);
+    .filter(x => x.frequency > 30 && x.amplitudes.some(a => a !== 0))
+    .slice(0, 100);
+
+  const modalSoundFrequencies: FrequencyAnnotation[] = [];
+  for (const discriminativeFrequency of discriminativeFrequencies) {
+    if (
+      modalSoundFrequencies.some(
+        msf =>
+          Math.abs(msf.frequency - discriminativeFrequency.frequency) <=
+          minFrequencyDistance
+      )
+    ) {
+      continue;
+    }
+    modalSoundFrequencies.push(discriminativeFrequency);
+    if (modalSoundFrequencies.length >= 30) break;
+  }
+
+  return modalSoundFrequencies;
 };

@@ -56,8 +56,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // draw discriminative frequency
     const modalSoundFrequencies = extractModalSoundFrequency(
-      annotatedFrequencies,
-      MAX_SAMPLE_VALUE
+      annotatedFrequencies
     );
     visualizeModalSoundFrequency(
       visualizerContext,
