@@ -34,6 +34,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   analyser.connect(audioCtx.destination);
   analyser.fftSize = FFT_SIZE;
 
+  let minFrequencyDistance = 100;
+  document
+    .getElementById("minFrequencyDistance")
+    ?.addEventListener("change", event => {
+      minFrequencyDistance = ~~(event.currentTarget as HTMLInputElement).value;
+      document.getElementById(
+        "minFrequencyDistance_label"
+      )!.innerText = `minFrequencyDistance: ${minFrequencyDistance}`;
+    });
+
   document.addEventListener("click", async () => {
     const frequencyAmounts = await playAudioBuffer(
       audioCtx,
@@ -56,7 +66,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // draw discriminative frequency
     const modalSoundFrequencies = extractModalSoundFrequency(
-      annotatedFrequencies
+      annotatedFrequencies,
+      minFrequencyDistance
     );
     visualizeModalSoundFrequency(
       visualizerContext,
